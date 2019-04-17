@@ -2,9 +2,12 @@ import gql from "graphql-tag";
 
 export default gql`
   {
-    tags {
-      id
-      created
+    demoValues(attributeId: 1) {
+      title
+      childs {
+        id
+        title
+      }
     }
   }
 `;
