@@ -7,7 +7,7 @@ import "./styles.sass";
 import genreIcon from "./assets/genre.svg";
 import moodIcon from "./assets/mood.svg";
 import listIcon from "./assets/list.svg";
-import { SelectTabs } from "./SelectTabs";
+import { SelectTab } from "./SelectTab";
 import { MoodTab } from "./MoodTab";
 import { GenreTab } from "./GenreTab";
 import { SelectedTags } from "./SelectedTags";
@@ -21,7 +21,7 @@ class Tags extends React.Component {
     moods: [],
     songs: 0,
     showChildren: false,
-    childs: []
+    parent: {}
   };
 
   // активная вкладка
@@ -31,9 +31,24 @@ class Tags extends React.Component {
 
   // добавить тег в список
   handleAddType = tag => {
-    const { selectedTypes, currentTab, genres, moods } = this.state;
+    const {
+      selectedTypes,
+      currentTab,
+      genres,
+      moods,
+      showChildren,
+      parent
+    } = this.state;
     const changedTag = { ...tag, choosed: true, type: currentTab };
     const genreIndex = genres.findIndex(item => item.id === tag.id);
+    if (showChildren) {
+      // если выбран "ребенок"
+      const parentIndex = genres.findIndex(item => item.id === parent.id);
+      const childIndex = parent.childs.findIndex(item => item.id === tag.id);
+      const changedGenres = [...genres];
+      changedGenres[parentIndex].childs[childIndex] = changedTag;
+      this.setState({ genres: changedGenres });
+    }
     if (genreIndex !== -1) {
       // тип тега - жанр
       const changedGenres = [...genres];
@@ -66,6 +81,20 @@ class Tags extends React.Component {
       // тип тега - жанр
       const changedGenres = [...genres];
       changedGenres[genreIndex] = changedTag;
+      // отменить выбор "ребенка"
+      changedGenres.forEach(parent => {
+        if (parent.childs && parent.childs.length) {
+          const childIndex = parent.childs.findIndex(
+            child => child.id === tag.id
+          );
+          if (childIndex !== -1) {
+            const parentIndex = changedGenres.findIndex(
+              item => item.id === parent.id
+            );
+            changedGenres[parentIndex].childs[childIndex] = changedTag;
+          }
+        }
+      });
       this.setState({ genres: changedGenres });
     } else {
       // тип тега - настроение
@@ -111,10 +140,10 @@ class Tags extends React.Component {
       .then(({ data }) => this.setState({ songs: data.demoMediafilesCount }));
   };
 
-  handleShowChildren = item => {
+  handleShowChildren = tag => {
     this.setState({
       showChildren: true,
-      childs: { items: item.childs, title: item.title }
+      parent: tag
     });
   };
 
@@ -128,21 +157,30 @@ class Tags extends React.Component {
     });
   };
 
+  getGenres = () => {
+    const { showChildren, genres, parent } = this.state;
+    if (!showChildren) {
+      return genres;
+    } else {
+      return parent.childs;
+    }
+  };
+
   render() {
     const {
-      genres,
       moods,
       currentTab,
       selectedTypes,
       songs,
-      showChildren
+      showChildren,
+      parent
     } = this.state;
 
     return (
       <div className="tags">
         <h1>Музыка для баров и ресторанов → Утренний музыкальный блок</h1>
         <h2>Укажите подходящие характеристики для музыкального блока</h2>
-        <SelectTabs
+        <SelectTab
           genreIcon={genreIcon}
           moodIcon={moodIcon}
           currentTab={currentTab}
@@ -154,8 +192,11 @@ class Tags extends React.Component {
             handleAddType={this.handleAddType}
             handleRemoveType={this.handleRemoveType}
             listIcon={listIcon}
-            genres={genres}
+            genres={this.getGenres()}
             showChildren={showChildren}
+            handleShowChildren={this.handleShowChildren}
+            handleHideChildren={this.handleHideChildren}
+            parent={parent}
           />
         )}
 
