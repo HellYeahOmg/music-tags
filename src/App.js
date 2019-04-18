@@ -4,11 +4,8 @@ import { ApolloProvider } from "react-apollo";
 import Tags from "./components/Tags";
 
 const client = new ApolloClient({
-  uri: "https://my.muz-lab.ru/api/v1/graphql/",
-  credentials: "same-origin",
-  fetchOptions: {
-    mode: "no-cors"
-  }
+  uri: "http://admin.mv.muz-lab.ru/api/v1/graphql/",
+  credentials: "same-origin"
 });
 
 class App extends Component {

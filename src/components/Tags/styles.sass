@@ -40,7 +40,7 @@ body
     justify-content: space-between
   &__list-expand
     position: absolute
-    right: -20px
+    right: -25px
   &__list-remove
     position: absolute
     right: 15px
@@ -57,21 +57,71 @@ body
     color: #42A5F5
   &__list-item--genre--active
     background-color: #42A5F5
+    border: 2px solid #42A5F5
     color: #fff
   &__list-item--mood
     border: 2px solid #EC407A
     color: #EC407A
   &__list-item--mood--active
     background-color: #EC407A
+    border: 2px solid #EC407A
     color: #fff
   &__choosed
     width: 810px
+    font-size: 14px
   &__choosed-title
     font-size: 12px
     letter-spacing: 0.08em
     line-height: 20px
     text-transform: uppercase
     color: #5C5C5C
+    margin-right: 30px
+  &__choosed-item
+    display: inline-block
+    margin-right: 35px
+    margin-bottom: 15px
+    &:last-child
+      margin-right: 0
+  &__choosed-item--genre
+    color: #42A5F5
+  &__choosed-item--mood
+    color: #EC407A
+  &__choosed-remove
+    cursor: pointer
+    margin-left: 10px
+  &__songs-count
+    font-size: 16px
+    color: #5C5C5C
+  &__songs-title  
+    color: #5C5C5C
+    font-size: 14px
+    margin-top: 40px
+    margin-bottom: 10px
+  &__songs
+    display: flex
+    flex-direction: column
+    align-items: center
+  &__btn
+    border-radius: 100px
+    color: #fff
+    text-transform: uppercase
+    padding: 10px 25px
+    margin-top: 30px
+    cursor: pointer
+    background-color: #15BF6D
+    &:focus
+      outline: none
+  &__child-info
+    width: 100%
+    display: flex
+    justify-content: center
+    align-items: center
+    color: #42A5F5
+    margin-bottom: 40px
+  &__child-back
+    margin-right: 32px
+    cursor: pointer
+
   
 
 

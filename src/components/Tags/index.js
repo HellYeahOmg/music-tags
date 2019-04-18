@@ -1,6 +1,8 @@
 import React from "react";
 import { withApollo } from "react-apollo";
-import taglist from "./queries/taglist";
+import genreList from "./queries/genreList";
+import moodList from "./queries/moodList";
+import songsCount from "./queries/songsCount";
 import "./styles.sass";
 import genreIcon from "./assets/genre.svg";
 import moodIcon from "./assets/mood.svg";
@@ -8,90 +10,18 @@ import listIcon from "./assets/list.svg";
 import { SelectTabs } from "./SelectTabs";
 import { MoodTab } from "./MoodTab";
 import { GenreTab } from "./GenreTab";
+import { SelectedTags } from "./SelectedTags";
+import { Songs } from "./Songs";
 
 class Tags extends React.Component {
   state = {
-    selectedTypes: new Set(),
+    selectedTypes: [],
     currentTab: "genres",
-    genres: [
-      {
-        title: "Прогрессивный рок",
-        id: 5178,
-        childs: [1]
-      },
-      {
-        title: "Рок-н-ролл",
-        id: 5179,
-        childs: []
-      },
-      {
-        title: "Пост-рок",
-        id: 5180,
-        childs: []
-      },
-      {
-        title: "Фолк-рок",
-        id: 5181,
-        childs: []
-      },
-      {
-        title: "Русская поп-музыка",
-        id: 5173,
-        childs: []
-      },
-      {
-        title: "Инди-поп",
-        id: 5174,
-        childs: []
-      },
-      {
-        title: "Авторская песня",
-        id: 5175,
-        childs: []
-      }
-    ],
-    mood: [
-      {
-        title: "Меланхоличная",
-        id: 4417,
-        childs: []
-      },
-      {
-        title: "Нейтральная",
-        id: 4418,
-        childs: []
-      },
-      {
-        title: "Счастливая",
-        id: 4420,
-        childs: []
-      },
-      {
-        title: "Печальная",
-        id: 4416,
-        childs: []
-      },
-      {
-        title: "Радостная",
-        id: 4419,
-        childs: []
-      },
-      {
-        title: "Сердитая",
-        id: 5212,
-        childs: []
-      },
-      {
-        title: "Мрачная",
-        id: 5213,
-        childs: []
-      },
-      {
-        title: "Расслабляющая",
-        id: 5214,
-        childs: []
-      }
-    ]
+    genres: [],
+    moods: [],
+    songs: 0,
+    showChildren: false,
+    childs: []
   };
 
   // активная вкладка
@@ -101,53 +31,113 @@ class Tags extends React.Component {
 
   // добавить тег в список
   handleAddType = tag => {
-    const { currentTab, genres, mood, selectedTypes } = this.state;
-    if (currentTab === "genres") {
-      const index = genres.findIndex(item => item.id === tag.id);
-      const newGenres = [...genres];
-      newGenres[index].choosed = true;
-      this.setState({ genres: newGenres });
+    const { selectedTypes, currentTab, genres, moods } = this.state;
+    const changedTag = { ...tag, choosed: true, type: currentTab };
+    const genreIndex = genres.findIndex(item => item.id === tag.id);
+    if (genreIndex !== -1) {
+      // тип тега - жанр
+      const changedGenres = [...genres];
+      changedGenres[genreIndex] = changedTag;
+      this.setState({ genres: changedGenres });
     } else {
-      const index = mood.findIndex(item => item.id === tag.id);
-      const newMoods = [...mood];
-      newMoods[index].choosed = true;
-      this.setState({ mood: newMoods });
+      // тип тега - настроение
+      const moodIndex = moods.findIndex(item => item.id === tag.id);
+      const changedMoods = [...moods];
+      changedMoods[moodIndex] = changedTag;
+      this.setState({ moods: changedMoods });
     }
-    const set = new Set(selectedTypes);
-    tag.type = currentTab; // записать тип тега
-    set.add(tag);
-    this.setState({ selectedTypes: set });
+    const selectedIndex = selectedTypes.findIndex(item => item.id === tag.id);
+    if (selectedIndex === -1) {
+      // избежать дубликатов. Можно было использовать Set, но Set и spread оператор не дружат
+      const arr = [...selectedTypes];
+      arr.push(changedTag);
+      this.setState({ selectedTypes: arr }, () => {
+        this.loadSongs();
+      });
+    }
   };
 
   // удалить тег из списка
   handleRemoveType = tag => {
-    const { currentTab, genres, mood, selectedTypes } = this.state;
-    if (currentTab === "genres") {
-      const index = genres.findIndex(item => item.id === tag.id);
-      const newGenres = [...genres];
-      newGenres[index].choosed = false;
-      this.setState({ genres: newGenres });
+    const { selectedTypes, genres, moods } = this.state;
+    const changedTag = { ...tag, choosed: false };
+    const genreIndex = genres.findIndex(item => item.id === tag.id);
+    if (genreIndex !== -1) {
+      // тип тега - жанр
+      const changedGenres = [...genres];
+      changedGenres[genreIndex] = changedTag;
+      this.setState({ genres: changedGenres });
     } else {
-      const index = mood.findIndex(item => item.id === tag.id);
-      const newMoods = [...mood];
-      newMoods[index].choosed = false;
-      this.setState({ mood: newMoods });
+      // тип тега - настроение
+      const moodIndex = moods.findIndex(item => item.id === tag.id);
+      const changedMoods = [...moods];
+      changedMoods[moodIndex] = changedTag;
+      this.setState({ moods: changedMoods });
     }
-    const set = new Set(selectedTypes);
-    set.delete(tag);
-    this.setState({ selectedTypes: set });
+    const selectedIndex = selectedTypes.findIndex(item => item.id === tag.id);
+    const arr = [...selectedTypes];
+    arr.splice(selectedIndex, 1);
+    this.setState({ selectedTypes: arr });
   };
 
   componentDidMount = () => {
     this.props.client
       .query({
-        query: taglist
+        query: genreList
       })
-      .then(data => console.log(data));
+      .then(({ data }) => {
+        this.setState({ genres: data.demoValues });
+      });
+    this.props.client
+      .query({
+        query: moodList
+      })
+      .then(({ data }) => {
+        this.setState({ moods: data.demoValues });
+      });
+  };
+
+  // получить количество песен
+  loadSongs = () => {
+    const valueIds = [];
+    this.state.selectedTypes.forEach(item => {
+      valueIds.push(item.id);
+    });
+    this.props.client
+      .query({
+        query: songsCount,
+        variables: { valueIds }
+      })
+      .then(({ data }) => this.setState({ songs: data.demoMediafilesCount }));
+  };
+
+  handleShowChildren = item => {
+    this.setState({
+      showChildren: true,
+      childs: { items: item.childs, title: item.title }
+    });
+  };
+
+  handleHideChildren = () => {
+    this.setState({
+      showChildren: false,
+      childs: {
+        title: "",
+        items: []
+      }
+    });
   };
 
   render() {
-    const { genres, mood, currentTab, selectedTypes } = this.state;
+    const {
+      genres,
+      moods,
+      currentTab,
+      selectedTypes,
+      songs,
+      showChildren
+    } = this.state;
+
     return (
       <div className="tags">
         <h1>Музыка для баров и ресторанов → Утренний музыкальный блок</h1>
@@ -160,38 +150,31 @@ class Tags extends React.Component {
         />
 
         {currentTab === "genres" && (
-          <>
-            <GenreTab
-              handleAddType={this.handleAddType}
-              handleRemoveType={this.handleRemoveType}
-              listIcon={listIcon}
-              genres={genres}
-            />
-          </>
+          <GenreTab
+            handleAddType={this.handleAddType}
+            handleRemoveType={this.handleRemoveType}
+            listIcon={listIcon}
+            genres={genres}
+            showChildren={showChildren}
+          />
         )}
 
         {currentTab === "mood" && (
-          <>
-            <MoodTab
-              mood={mood}
-              handleAddType={this.handleAddType}
-              handleRemoveType={this.handleRemoveType}
-            />
-          </>
+          <MoodTab
+            moods={moods}
+            handleAddType={this.handleAddType}
+            handleRemoveType={this.handleRemoveType}
+          />
         )}
 
-        <div className="tags__choosed">
-          {selectedTypes.size !== 0 && (
-            <>
-              <span className="tags__choosed-title">
-                Выбранные характеристики:{" "}
-              </span>
-              {Array.from(selectedTypes).map((item, index) => {
-                return <span key={index}>{`${item.title} `}</span>;
-              })}
-            </>
-          )}
-        </div>
+        {selectedTypes.length !== 0 && (
+          <SelectedTags
+            selectedTypes={selectedTypes}
+            handleRemoveType={this.handleRemoveType}
+          />
+        )}
+
+        {selectedTypes.length !== 0 && <Songs songs={songs} />}
       </div>
     );
   }

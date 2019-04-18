@@ -1,7 +1,7 @@
 import React from "react";
-export const MoodTab = ({ mood, handleAddType, handleRemoveType }) => (
+export const MoodTab = ({ moods, handleAddType, handleRemoveType }) => (
   <div className="tags__list">
-    {mood.map((item, index) => {
+    {moods.map((item, index) => {
       return (
         <div
           className={
